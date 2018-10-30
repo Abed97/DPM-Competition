@@ -1,6 +1,5 @@
 package ca.mcgill.ecse211.localization;
 
-import ca.mcgill.ecse211.navigation.Driver;
 import ca.mcgill.ecse211.navigation.MainClass;
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
@@ -26,7 +25,7 @@ public class UltrasonicLocalizer implements Runnable {
 	private static final int FILTER_OUT = 30;
 	public static final int WALL_DISTANCE = 40;
 	public static int ROTATION_SPEED = 100;
-	private Driver driver;
+	private EV3LargeRegulatedMotor leftMotor, rightMotor;
 	private SampleProvider usSensor;
 	private Odometer odometer;
 	private float[] usData;
@@ -42,12 +41,14 @@ public class UltrasonicLocalizer implements Runnable {
 	 * @param leftMotor,
 	 *            rightMotor, TRACK, WHEEL_RAD.
 	 */
-	public UltrasonicLocalizer(Driver drive) throws OdometerExceptions {
+	public UltrasonicLocalizer(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, double TRACK,
+			double WHEEL_RAD) throws OdometerExceptions {
 		odometer = Odometer.getOdometer();
 		SensorModes us_sensor = MainClass.usSensor;
 		this.usSensor = us_sensor.getMode("Distance");
 		this.usData = new float[usSensor.sampleSize()];
-
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
 	}
 
 	public void run() {
@@ -72,59 +73,94 @@ public class UltrasonicLocalizer implements Runnable {
 		fetchUSData();
 		if (this.distance < 100) {
 			while (this.distance < 100) {
-				driver.spinNB(-720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.backward();
+				rightMotor.forward();
 
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 
 			while (this.distance > WALL_DISTANCE) {
-				driver.spinNB(720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.backward();
+				rightMotor.forward();
+
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 			odometer.setTheta(0);
 
 			while (this.distance < 100) {
-				driver.spinNB(720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.forward();
+				rightMotor.backward();
+
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 
 			while (this.distance > WALL_DISTANCE) {
-				driver.spinNB(720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.forward();
+				rightMotor.backward();
+
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 
 			angle = odometer.getXYT()[2];
 		} else {// facing away from the walls
 			while (this.distance > WALL_DISTANCE) {
-				driver.spinNB(-720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.backward();
+				rightMotor.forward();
+
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 			odometer.setTheta(0);
 
 			while (this.distance < 100) {
-				driver.spinNB(720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.forward();
+				rightMotor.backward();
+
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 
 			while (this.distance > WALL_DISTANCE) {
-				driver.spinNB(720);
+				leftMotor.setSpeed(ROTATION_SPEED);
+				rightMotor.setSpeed(ROTATION_SPEED);
+				leftMotor.forward();
+				rightMotor.backward();
+
 				fetchUSData();
 			}
-			driver.stop();
+			leftMotor.stop(true);
+			rightMotor.stop(false);
 
 			angle = odometer.getXYT()[2];
 		}
+		leftMotor.rotate(-convertAngle(MainClass.WHEEL_RAD, MainClass.TRACK, 45 + (angle / 2.0)), true);
+		rightMotor.rotate(convertAngle(MainClass.WHEEL_RAD, MainClass.TRACK, 45 + (angle / 2.0)), false);
 		
-		driver.spinB(driver.convertAngle(45 + (angle / 2.0)));
-	
-		driver.stop();
 		
+		leftMotor.stop(true);
+		rightMotor.stop(false);
 		odometer.setTheta(0);
 	}
 
@@ -142,5 +178,13 @@ public class UltrasonicLocalizer implements Runnable {
 			filter_control = 0;
 			this.distance = new_distance;
 		}
+	}
+
+	public static int convertDistance(double radius, double distance) {
+		return (int) ((180.0 * distance) / (Math.PI * radius));
+	}
+
+	public static int convertAngle(double radius, double width, double angle) {
+		return convertDistance(radius, Math.PI * width * angle / 360.0);
 	}
 }

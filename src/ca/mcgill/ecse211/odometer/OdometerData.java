@@ -5,6 +5,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import ca.mcgill.ecse211.navigation.MainClass;
+
 /**
  * This class stores and provides thread safe access to the odometer data.
  * 
@@ -202,6 +204,7 @@ public class OdometerData {
     isReseting = true;
     try {
       this.theta = theta;
+      MainClass.gyroSensor.reset();
       isReseting = false; // Done reseting
       doneReseting.signalAll(); // Let the other threads know that you are
                                 // done reseting

@@ -11,6 +11,8 @@
 package ca.mcgill.ecse211.odometer;
 
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.sensor.EV3GyroSensor;
+import lejos.robotics.SampleProvider;
 
 public class Odometer extends OdometerData implements Runnable {
 
@@ -22,6 +24,11 @@ public class Odometer extends OdometerData implements Runnable {
   private int rightMotorTachoCount;
   private EV3LargeRegulatedMotor leftMotor;
   private EV3LargeRegulatedMotor rightMotor;
+  private EV3GyroSensor gyroSensor;
+  private SampleProvider gyroSampleProvider;
+  private float[] gyro_sample;
+  private float prev_gyro_value;
+  private float curr_gyro_value;
 
   private final double TRACK;
   private final double WHEEL_RAD;
@@ -49,12 +56,18 @@ public class Odometer extends OdometerData implements Runnable {
    * @throws OdometerExceptions
    */
   private Odometer(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
-      final double TRACK, final double WHEEL_RAD) throws OdometerExceptions {
+      EV3GyroSensor gyroSensor, final double TRACK, final double WHEEL_RAD) throws OdometerExceptions {
     odoData = OdometerData.getOdometerData(); // Allows access to x,y,z
                                               // manipulation methods
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
-
+    
+    this.gyroSensor = gyroSensor;
+    this.gyroSampleProvider = this.gyroSensor.getAngleMode();
+    this.gyro_sample = new float[gyroSensor.sampleSize()];
+    
+    		
+    
     // Reset the values of x, y and z to 0
     odoData.setXYT(0, 0, 0);
 
@@ -75,12 +88,12 @@ public class Odometer extends OdometerData implements Runnable {
    * @throws OdometerExceptions
    */
   public synchronized static Odometer getOdometer(EV3LargeRegulatedMotor leftMotor,
-      EV3LargeRegulatedMotor rightMotor, final double TRACK, final double WHEEL_RAD)
+      EV3LargeRegulatedMotor rightMotor, EV3GyroSensor gyroSensor, final double TRACK, final double WHEEL_RAD)
       throws OdometerExceptions {
     if (odo != null) { // Return existing object
       return odo;
     } else { // create object and return it
-      odo = new Odometer(leftMotor, rightMotor, TRACK, WHEEL_RAD);
+      odo = new Odometer(leftMotor, rightMotor, gyroSensor, TRACK, WHEEL_RAD);
       return odo;
     }
   }
@@ -107,6 +120,8 @@ public class Odometer extends OdometerData implements Runnable {
   // run method (required for Thread)
   public void run() {
     long updateStart, updateEnd;
+    prev_gyro_value = fetchGyroData();
+    
     while (true) {
     	updateStart = System.currentTimeMillis();
     		leftMotorTachoCount = leftMotor.getTachoCount();
@@ -120,17 +135,24 @@ public class Odometer extends OdometerData implements Runnable {
     		lastTachoL=leftMotorTachoCount; 
     		lastTachoR=rightMotorTachoCount;
     		
+    		
     		//Computes changes in distances and theta and updates them 
     		deltaD=0.5*(distL+distR);
-    		deltaT=(distL-distR)/TRACK; 
-    		Theta+=deltaT; 
+    		//deltaT=(distL-distR)/TRACK; 
+    		//Theta+=deltaT; 
     		dX=deltaD*Math.sin(Theta); 
     		dY=deltaD*Math.cos(Theta);
     		X=X+dX;
-    		Y=Y+dY;		
+    		Y=Y+dY;	
+    		
+    		curr_gyro_value = fetchGyroData();
+    		deltaT = (double) (prev_gyro_value - curr_gyro_value);
+    		Theta += deltaT;
+    		
+    		prev_gyro_value = curr_gyro_value;
     		
 			//Updates the odometer with the new information 
-    	  	odo.update(dX, dY, deltaT*180/Math.PI);
+    	  	odo.update(dX, dY, deltaT);
       
 
 
@@ -215,5 +237,10 @@ public class Odometer extends OdometerData implements Runnable {
     synchronized (this) {
       return Y;
     }
-  }   
+  }
+  
+  public float fetchGyroData() {
+	  gyroSampleProvider.fetchSample(gyro_sample, 0);
+	  return gyro_sample[0];
+  }
 }

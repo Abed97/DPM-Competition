@@ -1,4 +1,4 @@
-package ringCapture;
+package ca.mcgill.ecse211.ringCapture;
 
 import java.util.HashMap;
 import java.util.Map;
