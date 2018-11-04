@@ -52,14 +52,16 @@ public class ArmController {
 
 		leftMotor.rotate(convertDistance(WHEELRADIUS, 10), true);
 		rightMotor.rotate(convertDistance(WHEELRADIUS, 10), false);
-
+		
 		leftMotor.rotate(-convertAngle(WHEELRADIUS, TRACK, 40.0), true);
 		rightMotor.rotate(convertAngle(WHEELRADIUS, TRACK, 40.0), false);
+		
 		armMotor.setSpeed(130.0F);
 		armMotor.rotate(-45);
 		
 		ColorID.fetchSample(csData, 0);
 		float intensity = csData[0]; //last value sent by sensor
+		
 
 	}
 
