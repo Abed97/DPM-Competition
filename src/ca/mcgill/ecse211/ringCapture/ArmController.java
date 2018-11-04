@@ -1,5 +1,8 @@
 package ca.mcgill.ecse211.ringCapture;
 
+import java.util.concurrent.TimeUnit;
+
+import lejos.hardware.Sound;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.motor.NXTRegulatedMotor;
@@ -21,9 +24,8 @@ public class ArmController {
 	private NXTRegulatedMotor armMotor;
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
-	private static final Port csPort = LocalEV3.get().getPort("S1");
-	private float[] csData;
-	private SampleProvider ColorID;
+
+	private RingColours ringColours;
 
 	public ArmController(NXTRegulatedMotor armMotor, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
 			double wheelRadius, double track) {
@@ -32,37 +34,93 @@ public class ArmController {
 		this.rightMotor = rightMotor;
 		WHEELRADIUS = wheelRadius;
 		TRACK = track;
-		SensorModes ColorSensor = new EV3ColorSensor(csPort);
-		ColorID = ColorSensor.getMode("Red");
-		this.csData = new float[ColorID.sampleSize()];
 		this.armMotor.stop();
 	}
 
-	public void moveArm() {
+	public void run() {
 
-		//first level
+		int degreeMoved = moveArm(FIRSTLEVEL);
+
+		boolean firstLevelDetected = moveRobot();
+
+		//need to move arm to second level if first level has no ring
+		if(!firstLevelDetected) {
+
+			//rotate back to face tree
+			leftMotor.rotate(convertAngle(WHEELRADIUS, TRACK, 40.0), true);
+			rightMotor.rotate(-convertAngle(WHEELRADIUS, TRACK, 40.0), false);
+
+			//move back
+			leftMotor.rotate(convertDistance(WHEELRADIUS, 10), true);
+			rightMotor.rotate(convertDistance(WHEELRADIUS, 10), false);
+
+			armMotor.setSpeed(10.0F);
+			//move arm back to 0 deg
+			armMotor.rotate(-(degreeMoved+45)); //sign depends on the orientation of the motor. need to check
+
+			moveArm(SECONDLEVEL);
+
+			moveRobot(); //same process, ignore returned boolean
+
+		}
+
+	}
+
+	private boolean moveRobot() {
+
+		boolean firstLevelDetected = false;
+		leftMotor.setSpeed(FORWARD_SPEED);
+		rightMotor.setSpeed(FORWARD_SPEED);
+
+		leftMotor.rotate(convertDistance(WHEELRADIUS, 10), true);
+		rightMotor.rotate(convertDistance(WHEELRADIUS, 10), false);
+
+		ringColours = new RingColours(); //change place in code depending on when you want to activate light sensor.
+
+		//dont know if this will work. want to let color sensor load before continuing robot movement 
+		try {
+			TimeUnit.SECONDS.sleep(7);
+		}catch(InterruptedException e) {
+			
+		}
+
+		leftMotor.rotate(-convertAngle(WHEELRADIUS, TRACK, 40.0), true);
+		rightMotor.rotate(convertAngle(WHEELRADIUS, TRACK, 40.0), false);
+
+		armMotor.setSpeed(130.0F);
+		armMotor.rotate(-45);
+
+		if(ringColours.colourDetected("Red")) {
+			beep(4);
+			firstLevelDetected = true;
+		}else if(ringColours.colourDetected("Blue")) {
+			beep(1);
+			firstLevelDetected = true;
+		}else if(ringColours.colourDetected("Green")) {
+			beep(2);
+			firstLevelDetected = true;
+		}else if(ringColours.colourDetected("Yellow")) {
+			beep(3);
+			firstLevelDetected = true;
+		}
+
+		return firstLevelDetected;
+	}
+
+	private int moveArm(double level) {
 		double a = FIRSTLEVEL - MOTORHEIGHT - AVGRINGRADIUS;
 		theta = Math.atan(a/ARMLENGTH);
 		int thetaInDeg = (int) (theta * (180/Math.PI));
 		armMotor.setSpeed(10.0F);
 		armMotor.rotate(-thetaInDeg); //sign depends on the orientation of the motor. need to check
 		armMotor.stop();
-		leftMotor.setSpeed(FORWARD_SPEED);
-		rightMotor.setSpeed(FORWARD_SPEED);
+		return thetaInDeg;
+	}
 
-		leftMotor.rotate(convertDistance(WHEELRADIUS, 10), true);
-		rightMotor.rotate(convertDistance(WHEELRADIUS, 10), false);
-		
-		leftMotor.rotate(-convertAngle(WHEELRADIUS, TRACK, 40.0), true);
-		rightMotor.rotate(convertAngle(WHEELRADIUS, TRACK, 40.0), false);
-		
-		armMotor.setSpeed(130.0F);
-		armMotor.rotate(-45);
-		
-		ColorID.fetchSample(csData, 0);
-		float intensity = csData[0]; //last value sent by sensor
-		
-
+	private void beep(int times) {
+		for(int i=0; i<times; i++) {
+			Sound.beep();
+		}
 	}
 
 	/**

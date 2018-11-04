@@ -3,9 +3,15 @@ package ca.mcgill.ecse211.ringCapture;
 import java.util.HashMap;
 import java.util.Map;
 
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
 
 public class RingColours {
+	
+	private static final Port csPort = LocalEV3.get().getPort("S1"); //change to proper port
 	
 	private SampleProvider ring_color_sample_provider;
 	private float[] color_samples;
@@ -18,14 +24,14 @@ public class RingColours {
 	private int[] blueRing = {26097, 119187, 79725, 7591, 25473, 8012};
 	private int[] yellowRing = {148692, 107749, 18901, 35384, 23879, 1561};
 	
-	public RingColours(SampleProvider sp, float[] data) {
-		this.ring_color_sample_provider = sp;
-		this.color_samples = data;
+	public RingColours() {
+		SensorModes ColorSensor = new EV3ColorSensor(csPort);
+		ring_color_sample_provider = ColorSensor.getMode("RGB");
+		this.color_samples = new float[ring_color_sample_provider.sampleSize()];
 		colorMap.put("Green", greenRing);
 		colorMap.put("Orange", orangeRing);
 		colorMap.put("Blue", blueRing);
 		colorMap.put("Yellow", yellowRing);
-		fetchLightData();
 	}
 	
 	public void fetchLightData() {
@@ -36,6 +42,8 @@ public class RingColours {
 	}
 	
 	public boolean colourDetected(String colour) {
+		
+		fetchLightData();
 		
 		int[] searchColorVal = colorMap.get(colour);
 		
