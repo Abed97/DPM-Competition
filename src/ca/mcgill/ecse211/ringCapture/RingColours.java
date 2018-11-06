@@ -18,12 +18,16 @@ public class RingColours {
 
 	private int redS, greenS, blueS;
 	
+	//Normalized colors
 	private Map<String, int[]> colorMap = new HashMap<String, int[]>();
 	private int[] greenRing = {52988, 115452, 15269, 13376, 26599, 1532}; // Rm, Gm,Bm, Rsd, Gsd, Bsd values (times 10^6 for each)
 	private int[] orangeRing = {111483, 36549, 7096, 17996, 6088, 999};
 	private int[] blueRing = {26097, 119187, 79725, 7591, 25473, 8012};
 	private int[] yellowRing = {148692, 107749, 18901, 35384, 23879, 1561};
 	
+	/**
+	 * Create new color sensor and assign keys to the colorMap
+	 */
 	public RingColours() {
 		SensorModes ColorSensor = new EV3ColorSensor(csPort);
 		ring_color_sample_provider = ColorSensor.getMode("RGB");
@@ -34,6 +38,9 @@ public class RingColours {
 		colorMap.put("Yellow", yellowRing);
 	}
 	
+	/**
+	 * Assign detected R,G, and B values to an array
+	 */
 	public void fetchLightData() {
 		ring_color_sample_provider.fetchSample(color_samples, 0);
 		this.redS = (int) (color_samples[0] * 1000000);
@@ -41,6 +48,11 @@ public class RingColours {
 		this.blueS = (int) (color_samples[2] * 1000000);
 	}
 	
+	/**
+	 * Check if colour is witing 2 std deviations from mean
+	 * @param colour
+	 * @return true if detected color is within 2 std deviations
+	 */
 	public boolean colourDetected(String colour) {
 		
 		fetchLightData();
