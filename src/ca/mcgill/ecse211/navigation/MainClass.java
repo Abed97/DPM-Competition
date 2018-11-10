@@ -28,8 +28,8 @@ public class MainClass {
 	public static final EV3ColorSensor ringSensor = new EV3ColorSensor(LocalEV3.get().getPort("S3"));
 	public static final EV3GyroSensor gyroSensor = new EV3GyroSensor(LocalEV3.get().getPort("S4"));
 	private static final TextLCD lcd = LocalEV3.get().getTextLCD();
-	public static final double WHEEL_RAD = 2.13;
-	public static final double TRACK = 21.9;
+	public static final double WHEEL_RAD = 2.2; //2.13
+	public static final double TRACK = 10.66;	//21.9
 	public Odometer odometer;
 	public static ObstacleAvoidance obstacleavoidance;
 
@@ -84,14 +84,14 @@ public class MainClass {
 			Thread odoDisplayThread = new Thread(odometryDisplay);
 			odoDisplayThread.start();
 			
-			/*	
-			usLocalizer.run(); */
+				
+			usLocalizer.run(); 
 			lightLocalization2.do_localization();
 			Sound.beep();
 			//go to start point
-			/*
+			
 			obstacleavoidance.run(); // run the obstacleAvoidance
-			*/
+			
 		}
 
 		while (Button.waitForAnyPress() != Button.ID_ESCAPE);

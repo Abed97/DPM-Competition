@@ -22,8 +22,8 @@ public class ObstacleAvoidance implements Runnable {
 	private SampleProvider usDistance;
 	private final double TRACK;
 	private final double WHEEL_RAD;
-	public static final int FORWARD_SPEED = 200;
-	private static final int ROTATE_SPEED = 150;
+	public static final int FORWARD_SPEED = 250;
+	private static final int ROTATE_SPEED = 200;
 	private static final double TILE_WIDTH = 30.48;
 	double currentT, currentY, currentX;
 	double dx, dy, dt;
@@ -66,7 +66,11 @@ public class ObstacleAvoidance implements Runnable {
 	private int yt = 5;
 	
 	// array list for points
-	private double[][] wayPoints = createWayPoints(xl,yl,xt,yt);	
+	private double[][] wayPoints = {{3 * TILE_WIDTH, 1 * TILE_WIDTH},
+			{ 3 * TILE_WIDTH, 7 * TILE_WIDTH},
+			{ 4 * TILE_WIDTH, 7 * TILE_WIDTH},
+			{ 7 * TILE_WIDTH, 1 * TILE_WIDTH}
+	};	
 	
 	public ObstacleAvoidance(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, final double TRACK,
 			final double WHEEL_RAD) throws OdometerExceptions { // constructor
@@ -108,7 +112,7 @@ public class ObstacleAvoidance implements Runnable {
 	public void run() {
 		for (EV3LargeRegulatedMotor motor : new EV3LargeRegulatedMotor[] { leftMotor, rightMotor }) {
 			motor.stop();
-			motor.setAcceleration(250); // reduced the acceleration to make it smooth
+		//	motor.setAcceleration(250); // reduced the acceleration to make it smooth
 		}
 		// wait 5 seconds
 		try {
@@ -133,6 +137,20 @@ public class ObstacleAvoidance implements Runnable {
 			}
 		}
 		*/
+		
+		
+		/*
+		// Testing wheel_rad and track by turning 360 degrees
+		leftMotor.setSpeed(ROTATE_SPEED);
+		rightMotor.setSpeed(ROTATE_SPEED);
+		leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 360), true);
+		rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 360), false);
+		
+		*/
+		
+		
+		
+		
 		
 		
 		
@@ -204,6 +222,8 @@ public class ObstacleAvoidance implements Runnable {
 		leftMotor.rotate(convertDistance(WHEEL_RAD, distanceToTravel), true);
 		rightMotor.rotate(convertDistance(WHEEL_RAD, distanceToTravel), true);
 
+		
+		
 		while (isNavigating()) { // avoiding the obstacles
 			usDistance.fetchSample(usData, 0);
 			float distance = usData[0] * 100;
@@ -254,6 +274,7 @@ public class ObstacleAvoidance implements Runnable {
 			}
 
 		}
+		
 		
 		leftMotor.stop(true);
 		rightMotor.stop(false);

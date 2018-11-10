@@ -124,7 +124,7 @@ public class LightLocalizer implements Runnable {
 		double[] position = {TILE_WIDTH, TILE_WIDTH, 0};
 		odoData.setPosition(position);
 		
-		odoData.setX(TILE_WIDTH);
+		odoData.setX(TILE_WIDTH * 7);
 		odoData.setY(TILE_WIDTH);
 	}
 
